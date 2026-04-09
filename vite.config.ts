@@ -3,7 +3,6 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
-import { mockupPreviewPlugin } from "./mockupPreviewPlugin";
 
 const rawPort = process.env.PORT;
 
@@ -27,10 +26,11 @@ if (!basePath) {
   );
 }
 
+const apiPort = process.env.API_PORT ?? "8080";
+
 export default defineConfig({
   base: basePath,
   plugins: [
-    mockupPreviewPlugin(),
     react(),
     tailwindcss(),
     runtimeErrorOverlay(),
@@ -42,17 +42,22 @@ export default defineConfig({
               root: path.resolve(import.meta.dirname, ".."),
             }),
           ),
+          await import("@replit/vite-plugin-dev-banner").then((m) =>
+            m.devBanner(),
+          ),
         ]
       : []),
   ],
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "src"),
+      "@assets": path.resolve(import.meta.dirname, "..", "..", "attached_assets"),
     },
+    dedupe: ["react", "react-dom"],
   },
   root: path.resolve(import.meta.dirname),
   build: {
-    outDir: path.resolve(import.meta.dirname, "dist"),
+    outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
   },
   server: {
@@ -62,6 +67,13 @@ export default defineConfig({
     fs: {
       strict: true,
       deny: ["**/.*"],
+    },
+    proxy: {
+      "/api": {
+        target: `http://localhost:${apiPort}`,
+        changeOrigin: false,
+        rewrite: (p) => p,
+      },
     },
   },
   preview: {
