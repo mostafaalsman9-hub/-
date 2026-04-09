@@ -1,0 +1,942 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: منصة الدكتور علي سعد - Educational Platform API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: users
+    description: User management
+  - name: announcements
+    description: Announcements management
+  - name: videos
+    description: Video content management
+  - name: pdfs
+    description: PDF files management
+  - name: courses
+    description: Courses management
+  - name: contact
+    description: Contact information
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: User login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials or not approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterBody"
+      responses:
+        "201":
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current user info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List all users (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected, banned]
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Users list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsersListResponse"
+
+  /users/stats:
+    get:
+      operationId: getUserStats
+      tags: [users]
+      summary: Get user statistics (admin only)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserStats"
+
+  /users/{id}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get a user by ID (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+    patch:
+      operationId: updateUserStatus
+      tags: [users]
+      summary: Update user status (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserStatusBody"
+      responses:
+        "200":
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+    delete:
+      operationId: deleteUser
+      tags: [users]
+      summary: Delete a user (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /announcements:
+    get:
+      operationId: listAnnouncements
+      tags: [announcements]
+      summary: List all announcements
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Announcements list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Announcement"
+
+    post:
+      operationId: createAnnouncement
+      tags: [announcements]
+      summary: Create an announcement (admin only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAnnouncementBody"
+      responses:
+        "201":
+          description: Announcement created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Announcement"
+
+  /announcements/{id}:
+    delete:
+      operationId: deleteAnnouncement
+      tags: [announcements]
+      summary: Delete an announcement (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Announcement deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /videos:
+    get:
+      operationId: listVideos
+      tags: [videos]
+      summary: List all videos
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: courseId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Videos list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Video"
+
+    post:
+      operationId: createVideo
+      tags: [videos]
+      summary: Add a video (admin only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVideoBody"
+      responses:
+        "201":
+          description: Video added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Video"
+
+  /videos/{id}:
+    delete:
+      operationId: deleteVideo
+      tags: [videos]
+      summary: Delete a video (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Video deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /pdfs:
+    get:
+      operationId: listPdfs
+      tags: [pdfs]
+      summary: List all PDF files
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: courseId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: PDFs list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Pdf"
+
+    post:
+      operationId: createPdf
+      tags: [pdfs]
+      summary: Add a PDF (admin only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePdfBody"
+      responses:
+        "201":
+          description: PDF added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pdf"
+
+  /pdfs/{id}:
+    delete:
+      operationId: deletePdf
+      tags: [pdfs]
+      summary: Delete a PDF (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: PDF deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /courses:
+    get:
+      operationId: listCourses
+      tags: [courses]
+      summary: List all courses
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Courses list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Course"
+
+    post:
+      operationId: createCourse
+      tags: [courses]
+      summary: Create a course (admin only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCourseBody"
+      responses:
+        "201":
+          description: Course created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+
+  /courses/{id}:
+    delete:
+      operationId: deleteCourse
+      tags: [courses]
+      summary: Delete a course (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Course deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /contact:
+    get:
+      operationId: getContact
+      tags: [contact]
+      summary: Get contact information
+      responses:
+        "200":
+          description: Contact info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContactInfo"
+
+    put:
+      operationId: updateContact
+      tags: [contact]
+      summary: Update contact information (admin only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateContactBody"
+      responses:
+        "200":
+          description: Contact info updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContactInfo"
+
+  /settings/background:
+    put:
+      operationId: updateBackground
+      tags: [contact]
+      summary: Update site background (admin only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBackgroundBody"
+      responses:
+        "200":
+          description: Background updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /settings:
+    get:
+      operationId: getSettings
+      tags: [contact]
+      summary: Get site settings
+      responses:
+        "200":
+          description: Site settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteSettings"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required:
+        - error
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    LoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    RegisterBody:
+      type: object
+      properties:
+        fullName:
+          type: string
+        nationalId:
+          type: string
+        phone:
+          type: string
+        studyYear:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required:
+        - fullName
+        - nationalId
+        - phone
+        - studyYear
+        - email
+        - password
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+      required:
+        - token
+        - user
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        fullName:
+          type: string
+        nationalId:
+          type: string
+        phone:
+          type: string
+        studyYear:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [admin, student]
+        status:
+          type: string
+          enum: [pending, approved, rejected, banned]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - fullName
+        - email
+        - role
+        - status
+        - createdAt
+
+    UpdateUserStatusBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [approved, rejected, banned]
+      required:
+        - status
+
+    UsersListResponse:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - users
+        - total
+
+    UserStats:
+      type: object
+      properties:
+        total:
+          type: integer
+        pending:
+          type: integer
+        approved:
+          type: integer
+        rejected:
+          type: integer
+        banned:
+          type: integer
+      required:
+        - total
+        - pending
+        - approved
+        - rejected
+        - banned
+
+    Announcement:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        content:
+          type: string
+        imageUrl:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - content
+        - createdAt
+
+    CreateAnnouncementBody:
+      type: object
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+        imageUrl:
+          type: string
+          nullable: true
+      required:
+        - title
+        - content
+
+    Video:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        url:
+          type: string
+        source:
+          type: string
+          enum: [youtube, googledrive, mega]
+        courseId:
+          type: integer
+          nullable: true
+        courseName:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - url
+        - source
+        - createdAt
+
+    CreateVideoBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        url:
+          type: string
+        source:
+          type: string
+          enum: [youtube, googledrive, mega]
+        courseId:
+          type: integer
+          nullable: true
+      required:
+        - title
+        - url
+        - source
+
+    Pdf:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        url:
+          type: string
+        source:
+          type: string
+          enum: [upload, mega, link]
+        courseId:
+          type: integer
+          nullable: true
+        courseName:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - url
+        - source
+        - createdAt
+
+    CreatePdfBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        url:
+          type: string
+        source:
+          type: string
+          enum: [upload, mega, link]
+        courseId:
+          type: integer
+          nullable: true
+      required:
+        - title
+        - url
+        - source
+
+    Course:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        duration:
+          type: string
+          nullable: true
+        schedule:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - createdAt
+
+    CreateCourseBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        duration:
+          type: string
+          nullable: true
+        schedule:
+          type: string
+          nullable: true
+      required:
+        - name
+
+    ContactInfo:
+      type: object
+      properties:
+        about:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        facebook:
+          type: string
+          nullable: true
+        telegram:
+          type: string
+          nullable: true
+        whatsapp:
+          type: string
+          nullable: true
+        instagram:
+          type: string
+          nullable: true
+      required:
+        - about
+
+    UpdateContactBody:
+      type: object
+      properties:
+        about:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        facebook:
+          type: string
+          nullable: true
+        telegram:
+          type: string
+          nullable: true
+        whatsapp:
+          type: string
+          nullable: true
+        instagram:
+          type: string
+          nullable: true
+
+    UpdateBackgroundBody:
+      type: object
+      properties:
+        backgroundUrl:
+          type: string
+          nullable: true
+        backgroundColor:
+          type: string
+          nullable: true
+      required: []
+
+    SiteSettings:
+      type: object
+      properties:
+        backgroundUrl:
+          type: string
+          nullable: true
+        backgroundColor:
+          type: string
+          nullable: true
+      required: []
